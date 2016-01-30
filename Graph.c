@@ -21,7 +21,7 @@ struct graphRep {
 // Create an edge from v to w 
 Edge mkEdge(Vertex v, Vertex w, int weight) { 
   assert(v >= 0 && w >= 0); 
-  assert(v != w);
+  //assert(v != w);
   Edge e = {v,w,weight}; 
   return e; 
 }

@@ -8,15 +8,16 @@
 //This struct stores information about an individual agent(detective or thief)
 //You might want to add to this struct to store more information
 struct agentRep{
-    Vertex startLocation;
-    Vertex currentLocation;
-    int currentCycle;
-    int maxCycles;
-    int initialStamina; //max stamina
-    int stamina;  //current stamina
-    int strategy;
-    Graph map;
-    char * name;
+  Vertex startLocation;
+  Vertex currentLocation;
+  Vertex goal;
+  int currentCycle;
+  int maxCycles;
+  int initialStamina; //max stamina
+  int stamina;  //current stamina
+  int strategy;
+  Graph map;
+  char * name;
 };
 
 
@@ -32,6 +33,7 @@ Agent initAgent(Vertex start, int maxCycles,int stamina,
 
     agent->startLocation = start;
     agent->currentLocation = start;
+    agent->goal = -1;
     agent->currentCycle = 0;
     agent->maxCycles = maxCycles;
     agent->initialStamina = stamina;
@@ -52,7 +54,7 @@ int filterEdges(Agent a,int numEdges,Edge *possibleMoves,Edge * filteredMoves){
     int i;
     for(i=0;i<numEdges;i++){
         if(possibleMoves[i].weight <= a->stamina){
-            filteredMoves[numFiltered++] = possibleMoves[i];     
+            filteredMoves[numFiltered++] = possibleMoves[i];
         }
     }
     return numFiltered;
@@ -80,7 +82,9 @@ Edge getNextMove(Agent agent,Graph g){
              nextMove = filteredMoves[rand()%numFilteredEdges];
 	 } else {
              //the agent must stay in the same location
+	     //and regains stamina
              nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
+	     agent->stamina = agent->initialStamina;
          }
          free(filteredMoves);
          free(possibleMoves);
@@ -92,10 +96,12 @@ Edge getNextMove(Agent agent,Graph g){
 }
 
 //Actually perform the move, by changing the agent's state
-//This function needs to be updated to adjust the agent's stamina
+//This function HAS BEEN updated to adjust the agent's stamina
 void makeNextMove(Agent agent,Edge move){
     agent->currentCycle++;
-    agent->currentLocation = move.w;    
+    agent->currentLocation = move.w;
+    agent->stamina -= move.weight;
+    assert(agent->stamina >= 0);
 }
 
 
@@ -123,3 +129,12 @@ void destroyAgent(Agent agent){
     free(agent);
 } 
 
+//Additional Functions
+void setGoal(Agent agent, Vertex goal) {
+  agent->goal = goal;
+}
+
+Vertex getGoal(Agent agent) {
+  assert(agent->goal >= 0);
+  return agent->goal;
+}

@@ -87,24 +87,24 @@ Graph readGraph(char * filename) {
 // You may need to modify this function, to initialise all 
 // important agent information
 void initialiseAgents(char *filename, Agent agents[], int maxCycles, Graph g){
-    FILE *fp;
-    fp = fopen (filename, "r"); // open data file
-    assert (fp != NULL);
-    int stamina;
-    Vertex start;
-    Vertex end;
-    char name[5];
-    int i;
-    int strategy;
+  FILE *fp;
+  fp = fopen (filename, "r"); // open data file
+  assert (fp != NULL);
+  int stamina;
+  Vertex start;
+  Vertex end;
+  char name[5];
+  int i;
+  int strategy;
 
-    fscanf(fp, "%d %d %d %[^\n]", &stamina,&start,&end,name);
-    agents[THIEF] = initAgent(start,maxCycles,stamina,RANDOM,g,name);
-  
-    for(i=1; i<=NUM_DETECTIVES; i++){      
-        fscanf(fp, "%d %d %d %[^\n]", &stamina,&start,&strategy,name);
-        agents[i] = initAgent(start,maxCycles,stamina,strategy,g,name);    
-    }  
-    fclose(fp);
+  fscanf(fp, "%d %d %d %[^\n]", &stamina,&start,&end,name);
+  agents[THIEF] = initAgent(start,maxCycles,stamina,RANDOM,g,name);
+  setGoal(agents[THIEF], end);
+  for(i=1; i<=NUM_DETECTIVES; i++){      
+    fscanf(fp, "%d %d %d %[^\n]", &stamina,&start,&strategy,name);
+    agents[i] = initAgent(start,maxCycles,stamina,strategy,g,name);    
+  }  
+  fclose(fp);
 }
 
 //Display information about the current state of the game
@@ -123,12 +123,25 @@ void display(int cycle,Agent agents[],Graph g){
 
 //check whether the game is over
 int checkGameState(Agent agents[],Graph g,int cycle,int maxCycles){
-    if(cycle >= maxCycles){
-	printf("GAME OVER: YOU LOSE - TIME IS UP\n");
-        return OVER;
-    }else{
-        return CONTINUE;
+  if(cycle >= maxCycles) {
+    printf("GAME OVER: YOU LOSE - TIME IS UP\n");
+    return OVER;
+  } else {
+    Vertex currThiefLoc = getCurrentLocation (agents[THIEF]);
+    int i = 1;
+    while (i <= NUM_DETECTIVES) {
+      if (currThiefLoc == getCurrentLocation (agents[i])) {
+	printf("GAME OVER: YOU WIN - THIEF WAS CAUGHT\n");
+	return WIN;
+      }
+      i++;
     }
+    if ( currThiefLoc == getGoal (agents[THIEF]) ) {
+      printf("GAME OVER: YOU LOSE - THIEF GOT AWAY\n");
+      return LOSE;
+    }
+    return CONTINUE;
+  }
 }
 
 //step through one cycle of the game

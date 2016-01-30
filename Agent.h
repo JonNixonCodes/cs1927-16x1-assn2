@@ -28,3 +28,7 @@ char * getName(Agent agent);
 void printAgent(Agent agent);
 
 void destroyAgent(Agent agent);
+
+//Additional Functions
+void setGoal(Agent agent, Vertex goal);
+Vertex getGoal(Agent agent);
