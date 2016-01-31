@@ -96,7 +96,7 @@ int incidentEdges(Graph g, Vertex v, Edge edges[]){
   //COMPLETE THIS
   int i = 0; int counter = 0;
   while (i < g->nV) {
-    if (g->edges[v][i] >= 1) {
+    if (g->edges[v][i] >= 0) {
       Edge e = mkEdge(v, i, g->edges[v][i]);
       edges[counter] = e;
       counter++;
