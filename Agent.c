@@ -28,25 +28,34 @@ struct agentRep{
 //You may need to add more to this
 Agent initAgent(Vertex start, int maxCycles,int stamina, 
                               int strategy, Graph g, char * name){
-    if(start >= numV(g)){
-        printf("Error starting vertex %d not valid\n",start);
-        abort();
-    }
-    Agent agent = malloc(sizeof(struct agentRep));
+  if(start >= numV(g)){
+    printf("Error starting vertex %d not valid\n",start);
+    abort();
+  }
+  Agent agent = malloc(sizeof(struct agentRep));
 
-    agent->startLocation = start;
-    agent->currentLocation = start;
-    agent->goal = -1;
-    agent->visited = calloc(numV(g), sizeof(Vertex)); //allocate zeroed memory
-    agent->currentCycle = 0;
-    agent->maxCycles = maxCycles;
-    agent->initialStamina = stamina;
-    agent->stamina = stamina;
-    agent->strategy = strategy;
-    agent->map = g;
-    agent->name = strdup(name);
+  agent->startLocation = start;
+  agent->currentLocation = start;
+  agent->goal = -1;
+  agent->visited = malloc(numV(g) * sizeof(Vertex)); //allocate memory
+  int i = 0;
+  for (i = 0; i < numV(g); i++) {
+    //initialise visited[start] to 1
+    if(i == start) {
+      agent->visited[i] = 1;
+    } else {
+      agent->visited[i] = 0;
+    }
+  }
+  agent->currentCycle = 0;
+  agent->maxCycles = maxCycles;
+  agent->initialStamina = stamina;
+  agent->stamina = stamina;
+  agent->strategy = strategy;
+  agent->map = g;
+  agent->name = strdup(name);
   
-    return agent;
+  return agent;
 }
 
 
