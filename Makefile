@@ -8,8 +8,8 @@ all: assn2
 %o:%c
 	$(CC) $(CFLAGS) -c $<
 
-assn2: main.o Graph.o Agent.o
-	$(CC) -o assn2 main.o Graph.o Agent.o
+assn2: main.o Graph.o Agent.o Stack.o
+	$(CC) $(CFLAGS) -o assn2 main.o Graph.o Agent.o Stack.o
 
 clean:
 	rm -f *.o core

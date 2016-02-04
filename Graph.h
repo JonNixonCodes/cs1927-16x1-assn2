@@ -1,5 +1,8 @@
 // An graph ADT interface for weighted undirected graphs
 
+#ifndef GRAPH_H
+#define GRAPH_H
+
 // vertices denoted by integers 0..N-1 
 typedef int Vertex; 
 
@@ -47,7 +50,7 @@ int numE(Graph g);
 void destroyGraph(Graph g); 
 void show(Graph g); 
 
-
+#endif /* !defined(GRAPH_H) */
 //YOU MAY ADD MORE FUNCTIONS IN HERE FOR YOUR OWN IMPLEMENTATION
 //DO NOT SUBMIT UNIT TESTS FOR THESE FUNCTIONS - OF COURSE
 //YOU SHOULD TEST THEM ANYWAY BUT COMMENT OUT OR REMOVE TESTS FOR 
