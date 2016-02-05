@@ -207,11 +207,8 @@ Edge getNextMove(Agent agent,Graph g) {
       //the agent must stay in the same location
       //and regains stamina
       nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
-    } else if (numCLVisited == 1) {
+    } else  {
       nextMove = cheapLeastVisited[0];
-    } else {
-      //nextMove is chosen by CLV from the filteredEdges
-      nextMove = cheapLeastVisited[rand()%numCLVisited];      
     }
     //Check stamina
     if (agent->stamina < nextMove.weight) {
@@ -321,10 +318,16 @@ char * getName(Agent agent){
 
 //Needs to be updated to print out vertex name information
 //and * for cities with informants
-void printAgent(Agent agent){
-    printf("%s %.d (%d)",agent->name,agent->stamina,
-                                      agent->currentLocation);
-    //MODIFY THIS
+void printAgent(Agent agent) {
+  Graph g = agent->map;
+  //MODIFY THIS
+  if (agent->goal != -1) {
+    //Thief
+    printf("%s %d %s (%d) %s (%d)\n", agent->name, agent->stamina, getCityName(g, agent->currentLocation), agent->currentLocation, getCityName(g, agent->goal), agent->goal);
+  } else {
+    //Detective
+    printf("%s %d %s (%d)\n", agent->name, agent->stamina, getCityName(g, agent->currentLocation), agent->currentLocation);
+  }
 }
 
 //You may need to update this to free any extra memory you use

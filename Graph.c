@@ -10,12 +10,15 @@
 #include <string.h>
 #include "Graph.h"
 
+#define MAX_STRLEN 100
 
 struct graphRep { 
   //TODO
   int nV;
   int nE;
   Vertex ** edges;
+  Vertex * informants;
+  char ** cityNames;
 }; 
 
 // Create an edge from v to w 
@@ -46,6 +49,18 @@ Graph newGraph(int nV) {
     }
     i++;
   }
+
+  nV = g->nV;
+  //create array for informants
+  g->informants = malloc(sizeof(Vertex) * nV);
+  //create array of city names
+  g->cityNames = malloc(sizeof(*(g->cityNames)) * nV);
+  i = 0;
+  while(i < nV) {
+    g->cityNames[i] = malloc(sizeof(char) * MAX_STRLEN);
+    i++;
+  }
+  
   return g;
 }
 
@@ -172,4 +187,27 @@ void show(Graph g) {
             printf("\n"); 
         }
     } 
+}
+
+void setCityName(Graph g, Vertex v, char * cityName) {
+  assert(v < numV(g));
+  assert(strlen(cityName) < MAX_STRLEN);
+  strcpy(g->cityNames[v], cityName);
+  assert(strcmp(g->cityNames[v], cityName) == 0);
+}
+
+char * getCityName(Graph g, Vertex v) {
+  assert(v < numV(g));
+  assert(strlen(g->cityNames[v]) < MAX_STRLEN);
+  return g->cityNames[v];
+}
+
+void insertInformant(Graph g, Vertex v) {
+  assert(g != NULL);
+  g->informants[v] = 1;
+}
+
+int checkInformant(Graph g, Vertex v) {
+  assert(g != NULL);
+  return g->informants[v];
 }

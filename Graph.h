@@ -55,3 +55,11 @@ void show(Graph g);
 //DO NOT SUBMIT UNIT TESTS FOR THESE FUNCTIONS - OF COURSE
 //YOU SHOULD TEST THEM ANYWAY BUT COMMENT OUT OR REMOVE TESTS FOR 
 //SUBMISSION OTHERWISE
+
+void setCityName(Graph g, Vertex v, char * cityName);
+
+char * getCityName(Graph g, Vertex v);
+
+void insertInformant(Graph g, Vertex v);
+
+int checkInformant(Graph g, Vertex v);
