@@ -191,30 +191,26 @@ Edge getNextMove(Agent agent,Graph g) {
     free(possibleMoves);
   } else if ( agent->strategy == C_L_VISITED ) {
     Edge * possibleMoves = malloc(numV(g) * sizeof(Edge));
-    Edge * filteredMoves = malloc(numV(g) * sizeof(Edge));
     Edge * cheapLeastVisited = malloc(numV(g) * sizeof(Edge));
 
     //Get all edges to adjacent vertices
     int numEdges = incidentEdges(g,agent->currentLocation,possibleMoves);
-         
-    //Filter out edges that the agent does not have enough stamina for
-    int numFilteredEdges = filterEdges(agent,numEdges,possibleMoves,filteredMoves);
-
+  
     //Filter out least visited moves
-    int numCLVisited = filterCLVEdges(agent, numFilteredEdges, filteredMoves, cheapLeastVisited);
+    int numCLVisited = filterCLVEdges(agent, numEdges, possibleMoves, cheapLeastVisited);
     assert(numCLVisited >= 0);
     if(numCLVisited == 0 ) {
       //the agent must stay in the same location
       //and regains stamina
       nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
     } else  {
+      //get the smallest index
       nextMove = cheapLeastVisited[0];
     }
     //Check stamina
     if (agent->stamina < nextMove.weight) {
       nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
     }
-    free(filteredMoves);
     free(possibleMoves);
     free(cheapLeastVisited);
 
