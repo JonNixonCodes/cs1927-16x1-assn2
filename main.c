@@ -118,6 +118,9 @@ void display(int cycle,Agent agents[],Graph g){
     printf ("  T  D1  D2  D3  D4\n");
     for (i = 0; i <= NUM_DETECTIVES; i++) {    
 	 printf ("%3d", getCurrentLocation(agents[i]));
+	 if ( checkInformant ( g, getCurrentLocation(agents[i]) ) ) {
+	     printf("*");
+	 }
          printf(" ");
     }
     printf ("\n\n");
