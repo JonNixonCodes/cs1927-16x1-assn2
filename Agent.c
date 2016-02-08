@@ -6,6 +6,7 @@
 #include "Agent.h"
 #include "Stack.h"
 #include "Item.h"
+#include "Lists.h"
 
 #define INT_MAX 9999
 #define TRUE 1
@@ -22,11 +23,11 @@ struct agentRep{
   Vertex * visited;
 
   //DFS
-  int *pre;
-  Vertex *st;
-  int count;
-  Stack stack;
-  int backtrack_flag;
+  //int *pre;
+  //Vertex *st;
+  //int count;
+  List path;
+  //int backtrack_flag;
   
   int currentCycle;
   int maxCycles;
@@ -36,8 +37,7 @@ struct agentRep{
   Graph map;
   char * name;
 };
-
-
+  
 //This creates one individual thief or detective
 //You may need to add more to this
 Agent initAgent(Vertex start, int maxCycles,int stamina, 
@@ -66,7 +66,7 @@ Agent initAgent(Vertex start, int maxCycles,int stamina,
 
   //DFS
   //initialise pre[i] and st[i] to -1
-  agent->pre = malloc(numV(g) * sizeof(int));
+  /*agent->pre = malloc(numV(g) * sizeof(int));
   for (i = 0; i < numV(g); i++) {
     agent->pre[i] = -1;
   }
@@ -75,8 +75,9 @@ Agent initAgent(Vertex start, int maxCycles,int stamina,
     agent->st[i] = -1;
   }
   agent->count = 0;
-  agent->stack = newStack();
   agent->backtrack_flag = FALSE; //indicates when agent is backtracking to to execute top node on stack
+  */
+  agent->path = newList();
   
   agent->currentCycle = 0;
   agent->maxCycles = maxCycles;
@@ -135,31 +136,55 @@ int filterCLVEdges(Agent a, int numFiltered, Edge * filteredMoves, Edge * cheapL
   return numCLVisited;
 }
 
-int filterDFSEdges(Agent a,int numEdges,Edge *possibleMoves,Edge * filteredMoves) {
-  int numFiltered = 0;
-  int i;
-  for (i=0;i<numEdges;i++) {
-    if (a->pre[possibleMoves[i].w] == -1) {
-      filteredMoves[numFiltered++] = possibleMoves[i];
+void setDFSPath(Graph g, Vertex start, List path) {
+  assert(g != NULL);
+  //empty agent's path
+  emptyList(path);
+  int i = 0;  int pre[numV(g)];  int st[numV(g)];
+  //initialise pre and st array
+  for (i = 0; i < numV(g); i++) {
+    pre[i] = -1;  st[i] = -1;
+  }
+  Vertex currV = start;
+  Edge possibleMoves[numV(g)];
+  int count = 0;
+  Stack s = newStack();
+  StackPush(s, mkEdge(currV, currV, 0));
+  while (!StackIsEmpty(s)) {//FIX
+    Edge currE = StackPop(s);
+    if (pre[currE.w] != -1) {
+      continue;
+    }    
+    if (currE.v != currV) {
+      //Backtrack
+      while (currV != currE.v) {
+	int numEdges = incidentEdges(g, currV, possibleMoves);      
+        for (i = 0; i < numEdges; i++) {
+          if (possibleMoves[i].w == st[currV]) {
+	    insertEnd(path, newNode(possibleMoves[i]));
+	    currV = st[currV];
+	    break;
+	  }
+        }
+        assert(i < numEdges);
+      }	
     }
+    //insert new move to end of path
+    if (count != 0) { //skip the first move
+      insertEnd(path, newNode(currE));
+    }
+    pre[currE.w] = count++;
+    st[currE.w] = currE.v;
+    currV = currE.w;
+    int numEdges = incidentEdges(g, currV, possibleMoves);
+    assert(numEdges > 0); //FIX LATER
+    for (i = numEdges-1; i >= 0; i--) {
+      if (pre[possibleMoves[i].w] == -1) {
+        StackPush(s, possibleMoves[i]);
+      }
+    }    
   }
-  return numFiltered;
-}
-
-Edge Backtrack (Agent a, int numEdges, Edge * possibleMoves) {
-  Edge nextMove;
-  int i = 0;
-  for (i = 0; i < numEdges; i++) {
-    if (possibleMoves[i].w == a->st[a->currentLocation]) {
-      nextMove = possibleMoves[i];
-      break;
-     }
-  assert(i < numEdges);
-  }
-  if (a->stamina < nextMove.weight) {
-    nextMove = mkEdge(a->currentLocation,a->currentLocation,0);
-  }
-  return nextMove;
+  dropStack(s);
 }
 
 // Get a legal move. This should be a move that the agent has enough 
@@ -217,56 +242,17 @@ Edge getNextMove(Agent agent,Graph g) {
 
     //DFS
   } else if (agent->strategy == DFS) {
-    assert(agent->stack != NULL);
-    int i = 0;
-    Edge * possibleMoves = malloc(numV(g) * sizeof(Edge));
-    Edge * DFSfilteredMoves = malloc(numV(g) * sizeof(Edge));
-    
-    //Get all edges to adjacent vertices
-    int numEdges = incidentEdges(g,agent->currentLocation, possibleMoves);
-    int numFilteredEdges =  filterDFSEdges(agent, numEdges, possibleMoves, DFSfilteredMoves);
-
-    if (numFilteredEdges == 0) {
-      //Start New DFS
-      if (StackIsEmpty(agent->stack)) {
-	//re-initialise pre[i] and st[i] to -1
-        for (i = 0; i < numV(g); i++) {
-          agent->pre[i] = -1;
-        }
-        for (i = 0; i < numV(g); i++) {
-          agent->st[i] = -1;
-        }
-        agent->count = 0;
-	numFilteredEdges =  filterDFSEdges(agent, numEdges, possibleMoves, DFSfilteredMoves);
-      } else { //back track to previous node
-	agent->backtrack_flag = TRUE;
-        return Backtrack(agent, numEdges, possibleMoves);
-      }
+    assert(agent->path != NULL);
+    if (isListEmpty(agent->path)) {
+      setDFSPath(g, agent->currentLocation, agent->path);
     }
-    
-    //check if finished backtracking i.e. nextMove.v == currentLocation
-    if (agent->backtrack_flag == TRUE) {
-      nextMove = StackPop(agent->stack);
-      if (nextMove.v != agent->currentLocation) {
-        StackPush(agent->stack, nextMove);
-        return Backtrack(agent, numEdges, possibleMoves);
-      } else {
-        agent->backtrack_flag = FALSE; //finished backtracking
-      }
-    } else { //not backtracking
-      i = 0;
-      while (i < numFilteredEdges) {
-        StackPush(agent->stack, DFSfilteredMoves[i]);
-        i++;
-      }
-      nextMove = StackPop(agent->stack);
-    }
-    
+    nextMove = getFirstItem(agent->path);
     //Check Stamina
     if (agent->stamina < nextMove.weight) {
-      StackPush(agent->stack, nextMove);
+      insertFront(agent->path, newNode(nextMove));
       nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
     }
+    assert(agent->stamina >= nextMove.weight);
   } else {
     printf("Agent strategy not implemented yet\n");
     abort();
@@ -287,12 +273,7 @@ void makeNextMove(Agent agent,Edge move){
   }
 
   //Depth-First Search
-  if (agent->strategy == DFS && agent->backtrack_flag == FALSE) {
-    agent->pre[move.v] = agent->count++;
-    if (move.v != move.w) {
-      agent->st[move.w] = move.v;
-    }
-  }
+
   
   if (move.v == move.w) {
     agent->stamina = agent->initialStamina;
@@ -330,9 +311,9 @@ void printAgent(Agent agent) {
 void destroyAgent(Agent agent){
   //YOU MAY NEED TO MODIFY THIS
   free(agent->visited);
-  free(agent->pre);
-  free(agent->st);
-  dropStack(agent->stack);
+  //free(agent->pre);
+  //free(agent->st);
+  deleteList(agent->path);
   free(agent->name);
   free(agent);
 } 
