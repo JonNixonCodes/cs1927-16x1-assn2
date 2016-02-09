@@ -17,9 +17,7 @@ Agent initAgent(Vertex start, int maxCycles,int stamina,
 //Calculate the next move
 Edge getNextMove(Agent agent,Graph graph);
 //Execute a given move
-void makeNextMove(Agent agent,Edge move);
-
-
+void makeNextMove(Graph g, Agent agent,Edge move);
 //Get information from the agent
 Vertex getCurrentLocation(Agent agent);
 Vertex getStartLocation(Agent agent);

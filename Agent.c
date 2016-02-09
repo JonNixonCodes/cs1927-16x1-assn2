@@ -23,11 +23,12 @@ struct agentRep{
   Vertex * visited;
 
   //DFS
-  //int *pre;
-  //Vertex *st;
-  //int count;
-  List path;
-  //int backtrack_flag;
+  List DFS_path;
+
+  //LT
+  List LT_path;
+  int LT_FLAG;
+  Vertex LT_goal;
   
   int currentCycle;
   int maxCycles;
@@ -51,7 +52,14 @@ Agent initAgent(Vertex start, int maxCycles,int stamina,
   agent->startLocation = start;
   agent->currentLocation = start;
   agent->goal = -1;
-
+  agent->currentCycle = 0;
+  agent->maxCycles = maxCycles;
+  agent->initialStamina = stamina;
+  agent->stamina = stamina;
+  agent->strategy = strategy;
+  agent->map = g;
+  agent->name = strdup(name);
+  
   //CLV
   agent->visited = malloc(numV(g) * sizeof(Vertex)); //allocate memory
   int i = 0;
@@ -65,28 +73,12 @@ Agent initAgent(Vertex start, int maxCycles,int stamina,
   }
 
   //DFS
-  //initialise pre[i] and st[i] to -1
-  /*agent->pre = malloc(numV(g) * sizeof(int));
-  for (i = 0; i < numV(g); i++) {
-    agent->pre[i] = -1;
-  }
-  agent->st = malloc(numV(g) * sizeof(Vertex));
-  for (i = 0; i < numV(g); i++) {
-    agent->st[i] = -1;
-  }
-  agent->count = 0;
-  agent->backtrack_flag = FALSE; //indicates when agent is backtracking to to execute top node on stack
-  */
-  agent->path = newList();
-  
-  agent->currentCycle = 0;
-  agent->maxCycles = maxCycles;
-  agent->initialStamina = stamina;
-  agent->stamina = stamina;
-  agent->strategy = strategy;
-  agent->map = g;
-  agent->name = strdup(name);
-  
+  agent->DFS_path = newList();
+
+  //LT
+  agent->LT_path = newList();
+  agent->LT_FLAG = FALSE;
+    
   return agent;
 }
 
@@ -182,20 +174,113 @@ void setDFSPath(Graph g, Vertex start, List path) {
       if (pre[possibleMoves[i].w] == -1) {
         StackPush(s, possibleMoves[i]);
       }
-    }    
+    }
   }
   dropStack(s);
 }
 
+void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
+  assert(g != NULL);
+  assert(start < numV(g));
+  //empty agent's path
+  emptyList(path);
+  //st: spanning tree, moves: num of moves, stamina: remaining stamina
+  int i = 0;  Edge possibleMoves[numV(g)]; int st[numV(g)];  int moves[numV(g)]; int stamina[numV(g)];
+  Vertex currV = start;
+  //initialise st, moves, stamina array
+  for (i = 0; i < numV(g); i++) {
+    st[i] = -1; moves[i] = -1; stamina[i] = agent->stamina;
+  }
+  //initialise stack
+  Stack s = newStack();
+  StackPush(s, mkEdge(currV, currV, 0));
+  while (!StackIsEmpty(s)) {
+    Edge currE = StackPop(s);
+    int currStamina = stamina[currE.v];
+    int numMoves = 1;
+    if ( (currStamina - currE.weight) < 0) {
+      if (currStamina == agent->initialStamina) {
+        //not enough stamina to make move
+	continue;
+      }
+      StackPush(s, currE);
+      numMoves++;
+      currStamina = agent->initialStamina;
+      continue;
+    }
+    //update arrays
+    st[currE.w] = currE.v;
+    moves[currE.w] = moves[currE.v] + numMoves;
+    currStamina = currStamina - currE.weight;
+    stamina[currE.w] = currStamina;
+    currV = currE.w;
+    
+    int numEdges = incidentEdges(g, currV, possibleMoves);
+    assert(numEdges > 0); //FIX LATER
+    for (i = numEdges-1; i >= 0; i--) {
+      if (moves[possibleMoves[i].w] != -1) {
+	//visited
+        if (moves[possibleMoves[i].w] == moves[currV]+1) {
+          //equal number of moves
+	  if ( stamina[possibleMoves[i].w] > (currStamina - possibleMoves[i].weight) ) {
+            //more stamina leftover: don't push new move to stack
+	    continue;
+	  }
+	} else if (moves[possibleMoves[i].w] == moves[currV]+2) {
+          //more moves
+	  if (!(currStamina - possibleMoves[i].weight < 0)) {
+            //no extra move to replenish: don't push new move to stack
+	    continue;
+	  }
+	}
+      }
+      StackPush(s, possibleMoves[i]);
+    }
+  }
+  //backtrace Least-Turns Path
+  for (i = 0; i < numV(g); i++) {
+    //check that every node has been reached
+    assert(st[i] != -1);
+  }
+  currV = goal;
+  while (currV != start) {
+    Edge nextMove;
+    int numEdges = incidentEdges(g, st[currV], possibleMoves);
+    for (i = 0; i < numEdges; i++) {
+      if (possibleMoves[i].w == currV) {
+        nextMove = possibleMoves[i];
+	break;
+      }
+    }
+    link new = newNode(nextMove);
+    insertFront(path, new);
+    currV = st[currV];
+  }
+}
 // Get a legal move. This should be a move that the agent has enough 
 // stamina to make and is a valid edge from the graph. 
 // You need to implement all other strategies.
 Edge getNextMove(Agent agent,Graph g) {
-  Edge nextMove;          
+  Edge nextMove;
+  //Least-turns Path strategy
+  if (agent->LT_FLAG == TRUE) {
+    nextMove = getFirstItem(agent->LT_path);
+    //Check Stamina
+    if (agent->stamina < nextMove.weight) {
+      insertFront(agent->LT_path, newNode(nextMove));
+      nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
+    }
+    if (isListEmpty(agent->LT_path)) {
+      //reset least turns flag
+      agent->LT_FLAG = FALSE;
+    }
+  }
   //Stationary strategy useful for debugging
-  if(agent->strategy == STATIONARY){
+  else if(agent->strategy == STATIONARY){
     nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);  
-  }else if(agent->strategy == RANDOM){      
+  }
+  //Random strategy
+  else if(agent->strategy == RANDOM){      
     Edge * possibleMoves = malloc(numV(g) * sizeof(Edge));
     Edge * filteredMoves = malloc(numV(g) * sizeof(Edge));
 
@@ -214,7 +299,9 @@ Edge getNextMove(Agent agent,Graph g) {
     }
     free(filteredMoves);
     free(possibleMoves);
-  } else if ( agent->strategy == C_L_VISITED ) {
+  }
+  //Cheapest Least Visited Strategy
+  else if ( agent->strategy == C_L_VISITED ) {
     Edge * possibleMoves = malloc(numV(g) * sizeof(Edge));
     Edge * cheapLeastVisited = malloc(numV(g) * sizeof(Edge));
 
@@ -238,18 +325,18 @@ Edge getNextMove(Agent agent,Graph g) {
     }
     free(possibleMoves);
     free(cheapLeastVisited);
+  }
 
-
-    //DFS
-  } else if (agent->strategy == DFS) {
-    assert(agent->path != NULL);
-    if (isListEmpty(agent->path)) {
-      setDFSPath(g, agent->currentLocation, agent->path);
+  //Depth First Search Strategy
+  else if (agent->strategy == DFS) {
+    assert(agent->DFS_path != NULL);
+    if (isListEmpty(agent->DFS_path)) {
+      setDFSPath(g, agent->currentLocation, agent->DFS_path);
     }
-    nextMove = getFirstItem(agent->path);
+    nextMove = getFirstItem(agent->DFS_path);
     //Check Stamina
     if (agent->stamina < nextMove.weight) {
-      insertFront(agent->path, newNode(nextMove));
+      insertFront(agent->DFS_path, newNode(nextMove));
       nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
     }
     assert(agent->stamina >= nextMove.weight);
@@ -262,18 +349,22 @@ Edge getNextMove(Agent agent,Graph g) {
 
 //Actually perform the move, by changing the agent's state
 //This function HAS BEEN updated to adjust the agent's stamina
-void makeNextMove(Agent agent,Edge move){
+void makeNextMove(Graph g, Agent agent,Edge move){
   agent->currentCycle++;
   agent->currentLocation = move.w;
-
+  if(agent->goal != -1) {
+    //location of thief stored in graph
+    setThiefLocation(g, agent->currentLocation);
+  }
+  if (checkInformant(g, agent->currentLocation) && (agent->goal == -1) ) {
+    agent->LT_FLAG = TRUE;
+    setLTPath(g, agent, agent->currentLocation, getThiefLocation(g), agent->LT_path);  
+  }
   //Cheapest Least Visited
   if (agent->strategy == C_L_VISITED) {
     //update visited array
     agent->visited[move.w]++;
   }
-
-  //Depth-First Search
-
   
   if (move.v == move.w) {
     agent->stamina = agent->initialStamina;
@@ -313,7 +404,8 @@ void destroyAgent(Agent agent){
   free(agent->visited);
   //free(agent->pre);
   //free(agent->st);
-  deleteList(agent->path);
+  deleteList(agent->DFS_path);
+  deleteList(agent->LT_path);
   free(agent->name);
   free(agent);
 } 

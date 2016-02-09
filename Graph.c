@@ -16,6 +16,7 @@ struct graphRep {
   //TODO
   int nV;
   int nE;
+  Vertex thiefLocation;
   Vertex ** edges;
   Vertex * informants;
   char ** cityNames;
@@ -36,6 +37,7 @@ Graph newGraph(int nV) {
   Graph g = malloc(sizeof(*g)); //allocate memory for graph
   g->nV = nV;
   g->nE = 0;
+  g->thiefLocation = -1;
   g->edges = malloc(sizeof(*(g->edges)) * nV); //allocate memory for pointers to arrays
   int i = 0;
   while (i < nV) //allocate memory for each array of vertices
@@ -210,4 +212,16 @@ void insertInformant(Graph g, Vertex v) {
 int checkInformant(Graph g, Vertex v) {
   assert(g != NULL);
   return g->informants[v];
+}
+
+void setThiefLocation(Graph g, Vertex thiefLoc) {
+  assert(g != NULL);
+  assert(thiefLoc > 0 && thiefLoc < numV(g));
+  g->thiefLocation = thiefLoc;
+}
+
+Vertex getThiefLocation(Graph g) {
+  assert(g != NULL);
+  assert( (g->thiefLocation > 0) && (g->thiefLocation < g->nV) );
+  return g->thiefLocation;
 }

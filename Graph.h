@@ -63,3 +63,7 @@ char * getCityName(Graph g, Vertex v);
 void insertInformant(Graph g, Vertex v);
 
 int checkInformant(Graph g, Vertex v);
+
+void setThiefLocation(Graph g, Vertex v);
+
+Vertex getThiefLocation(Graph g);
