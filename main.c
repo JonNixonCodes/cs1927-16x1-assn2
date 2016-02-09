@@ -112,7 +112,7 @@ void initialiseAgents(char *filename, Agent agents[], int maxCycles, Graph g){
 
 //Display information about the current state of the game
 void display(int cycle,Agent agents[],Graph g){
-    int i;
+    int i = 0;
     printf("Hour %d\n",cycle);
     // function to print the current location of each agent
     printf ("  T  D1  D2  D3  D4\n");

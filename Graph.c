@@ -55,6 +55,11 @@ Graph newGraph(int nV) {
   nV = g->nV;
   //create array for informants
   g->informants = malloc(sizeof(Vertex) * nV);
+  while(i < nV) {
+    g->informants[i] = 0;
+    i++;
+  }
+
   //create array of city names
   g->cityNames = malloc(sizeof(*(g->cityNames)) * nV);
   i = 0;
@@ -84,7 +89,7 @@ void insertE(Graph g, Edge e) {
 int isAdjacent(Graph g, Vertex v, Vertex w){
   assert(g != NULL);
   //COMPLETE THIS
-  if (g->edges[v][w] || g->edges[w][v]) {
+  if ( (g->edges[v][w] != -1) || (g->edges[w][v] != -1) ) {
     return 1;
   }
   return 0;
@@ -181,7 +186,7 @@ void show(Graph g) {
         int nshown = 0; 
         for (j = 0; j < numV(g); j++) { 
             if (isAdjacent(g,i,j)) {                
-                printf("%d-%d : TODO ",i,j); 
+                printf("%d-%d ",i,j); 
                 nshown++; 
             } 
         } 
@@ -216,12 +221,12 @@ int checkInformant(Graph g, Vertex v) {
 
 void setThiefLocation(Graph g, Vertex thiefLoc) {
   assert(g != NULL);
-  assert(thiefLoc > 0 && thiefLoc < numV(g));
+  assert(thiefLoc >= 0 && thiefLoc < numV(g));
   g->thiefLocation = thiefLoc;
 }
 
 Vertex getThiefLocation(Graph g) {
   assert(g != NULL);
-  assert( (g->thiefLocation > 0) && (g->thiefLocation < g->nV) );
+  assert( (g->thiefLocation >= 0) && (g->thiefLocation < g->nV) );
   return g->thiefLocation;
 }

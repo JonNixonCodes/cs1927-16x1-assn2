@@ -305,13 +305,17 @@ Edge getNextMove(Agent agent,Graph g) {
   //Cheapest Least Visited Strategy
   else if ( agent->strategy == C_L_VISITED ) {
     Edge * possibleMoves = malloc(numV(g) * sizeof(Edge));
+    Edge * filteredMoves = malloc(numV(g) * sizeof(Edge));
     Edge * cheapLeastVisited = malloc(numV(g) * sizeof(Edge));
 
     //Get all edges to adjacent vertices
     int numEdges = incidentEdges(g,agent->currentLocation,possibleMoves);
-  
+    
+    //Filter out illegal moves
+    int numFilteredEdges = filterEdges(agent,numEdges,possibleMoves,filteredMoves);
+
     //Filter out least visited moves
-    int numCLVisited = filterCLVEdges(agent, numEdges, possibleMoves, cheapLeastVisited);
+    int numCLVisited = filterCLVEdges(agent, numFilteredEdges, filteredMoves, cheapLeastVisited);
     assert(numCLVisited >= 0);
     if(numCLVisited == 0 ) {
       //the agent must stay in the same location
@@ -320,9 +324,18 @@ Edge getNextMove(Agent agent,Graph g) {
     } else  {
       //get the smallest index
       nextMove = cheapLeastVisited[0];
+      int i = 0;
+      for (i = 1; i < numCLVisited; i++) {        
+        if (cheapLeastVisited[i].w <= nextMove.w) {
+          nextMove = cheapLeastVisited[i];
+	}
+      }
     }
     //Check stamina
+    //assert(agent->stamina >= nextMove.weight);
     if (agent->stamina < nextMove.weight) {
+      printf("stamina = %d\n", agent->stamina);
+      printf("next move weight = %d\n", nextMove.weight);
       nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
     }
     free(possibleMoves);
@@ -341,7 +354,7 @@ Edge getNextMove(Agent agent,Graph g) {
       insertFront(agent->DFS_path, newNode(nextMove));
       nextMove = mkEdge(agent->currentLocation,agent->currentLocation,0);
     }
-    assert(agent->stamina >= nextMove.weight);
+    //assert(agent->stamina >= nextMove.weight);
   } else {
     printf("Agent strategy not implemented yet\n");
     abort();
@@ -404,8 +417,6 @@ void printAgent(Agent agent) {
 void destroyAgent(Agent agent){
   //YOU MAY NEED TO MODIFY THIS
   free(agent->visited);
-  //free(agent->pre);
-  //free(agent->st);
   deleteList(agent->DFS_path);
   deleteList(agent->LT_path);
   free(agent->name);
