@@ -1,1 +1,4 @@
-Hi
+github:
+https://github.com/jonnyboy11494/cs1927-16x1-assn2
+
+- I took notes in a notebook

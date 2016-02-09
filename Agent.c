@@ -185,7 +185,9 @@ void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
   //empty agent's path
   emptyList(path);
   //st: spanning tree, moves: num of moves, stamina: remaining stamina
-  int i = 0;  Edge possibleMoves[numV(g)]; int st[numV(g)];  int moves[numV(g)]; int stamina[numV(g)];
+  int i = 0;  
+  Edge possibleMoves[numV(g)]; 
+  int st[numV(g)];  int moves[numV(g)]; int stamina[numV(g)];
   Vertex currV = start;
   //initialise st, moves, stamina array
   for (i = 0; i < numV(g); i++) {
@@ -201,42 +203,31 @@ void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
     Edge currE = StackPop(s);
     int currStamina = stamina[currE.v];
     if ( (currStamina - currE.weight) < 0) {
+      //not enough stamina
       if (currStamina == agent->initialStamina) {
         //not enough stamina to make move
 	continue;
       }
+      //replenish stamina
       StackPush(s, currE);
       moves[currE.w]++;
-      stamina[currE.w] = agent->initialStamina;
+      stamina[currE.v] = agent->initialStamina;
       continue;
     }
     //update arrays
     st[currE.w] = currE.v;
-    moves[currE.w] = moves[currE.v]++;
+    moves[currE.w] = moves[currE.v]+1;
     stamina[currE.w] = currStamina - currE.weight;
-    currStamina = currStamina - currE.weight;
+    currStamina = stamina[currE.w];
     currV = currE.w;
     
     int numEdges = incidentEdges(g, currV, possibleMoves);
-    assert(numEdges > 0); //FIX LATER
+    assert(numEdges > 0);
     for (i = numEdges-1; i >= 0; i--) {
-      if (moves[possibleMoves[i].w] != -1) {
-	//visited
-        if ( moves[possibleMoves[i].w] == (moves[currV]+1) ) {
-          //equal number of moves
-	  if ( stamina[possibleMoves[i].w] > (currStamina - possibleMoves[i].weight) ) {
-            //more stamina leftover: don't push new move to stack
-	    continue;
-	  }
-	} else if (moves[possibleMoves[i].w] == moves[currV]+2) {
-          //more moves
-	  if (!(currStamina - possibleMoves[i].weight < 0)) {
-            //no extra move to replenish: don't push new move to stack
-	    continue;
-	  }
-	}
+      Edge nextMove = possibleMoves[i];
+      if (moves[nextMove.w] > (moves[currV] + 1) ) {
+        StackPush(s, nextMove);
       }
-      StackPush(s, possibleMoves[i]);
     }
   }
   //backtrace Least-Turns Path
@@ -265,6 +256,11 @@ void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
 Edge getNextMove(Agent agent,Graph g) {
   Edge nextMove;
   //Least-turns Path strategy
+  if (checkInformant(g, agent->currentLocation) && (agent->goal == -1) ) {
+    //detective in same location as informant
+    agent->LT_FLAG = TRUE;
+    setLTPath(g, agent, agent->currentLocation, getThiefLocation(g), agent->LT_path);  
+  }
   if (agent->LT_FLAG == TRUE) {
     nextMove = getFirstItem(agent->LT_path);
     //Check Stamina
@@ -367,14 +363,6 @@ Edge getNextMove(Agent agent,Graph g) {
 void makeNextMove(Graph g, Agent agent, Edge move){
   agent->currentCycle++;
   agent->currentLocation = move.w;
-  if(agent->goal != -1) {
-    //location of thief stored in graph
-    setThiefLocation(g, agent->currentLocation);
-  }
-  if (checkInformant(g, agent->currentLocation) && (agent->goal == -1) ) {
-    agent->LT_FLAG = TRUE;
-    setLTPath(g, agent, agent->currentLocation, getThiefLocation(g), agent->LT_path);  
-  }
   //Cheapest Least Visited
   if (agent->strategy == C_L_VISITED) {
     //update visited array

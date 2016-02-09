@@ -157,7 +157,13 @@ int step(int cycle,Agent agents[],Graph g,int maxCycles){
     
     int i;
     cycle++;
+    
     for(i=0;i<=NUM_DETECTIVES;i++){
+      if(i == THIEF) {
+        //location of thief stored in graph
+        setThiefLocation(g, getCurrentLocation(agents[i]));
+      }
+
        Edge  nextMove = getNextMove(agents[i],g);  
        makeNextMove(g, agents[i], nextMove);
      
