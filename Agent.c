@@ -28,7 +28,6 @@ struct agentRep{
   //LT
   List LT_path;
   int LT_FLAG;
-  Vertex LT_goal;
   
   int currentCycle;
   int maxCycles;
@@ -78,7 +77,7 @@ Agent initAgent(Vertex start, int maxCycles,int stamina,
   //LT
   agent->LT_path = newList();
   agent->LT_FLAG = FALSE;
-    
+  
   return agent;
 }
 
@@ -182,6 +181,7 @@ void setDFSPath(Graph g, Vertex start, List path) {
 void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
   assert(g != NULL);
   assert(start < numV(g));
+  assert(goal != -1);
   //empty agent's path
   emptyList(path);
   //st: spanning tree, moves: num of moves, stamina: remaining stamina
@@ -189,7 +189,10 @@ void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
   Vertex currV = start;
   //initialise st, moves, stamina array
   for (i = 0; i < numV(g); i++) {
-    st[i] = -1; moves[i] = -1; stamina[i] = agent->stamina;
+    st[i] = -1; moves[i] = -1; stamina[i] = -1;
+    if (i == start) {
+      stamina[i] = agent->stamina;
+    }
   }
   //initialise stack
   Stack s = newStack();
@@ -197,22 +200,21 @@ void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
   while (!StackIsEmpty(s)) {
     Edge currE = StackPop(s);
     int currStamina = stamina[currE.v];
-    int numMoves = 1;
     if ( (currStamina - currE.weight) < 0) {
       if (currStamina == agent->initialStamina) {
         //not enough stamina to make move
 	continue;
       }
       StackPush(s, currE);
-      numMoves++;
-      currStamina = agent->initialStamina;
+      moves[currE.w]++;
+      stamina[currE.w] = agent->initialStamina;
       continue;
     }
     //update arrays
     st[currE.w] = currE.v;
-    moves[currE.w] = moves[currE.v] + numMoves;
+    moves[currE.w] = moves[currE.v]++;
+    stamina[currE.w] = currStamina - currE.weight;
     currStamina = currStamina - currE.weight;
-    stamina[currE.w] = currStamina;
     currV = currE.w;
     
     int numEdges = incidentEdges(g, currV, possibleMoves);
@@ -220,7 +222,7 @@ void setLTPath(Graph g, Agent agent, Vertex start, Vertex goal, List path) {
     for (i = numEdges-1; i >= 0; i--) {
       if (moves[possibleMoves[i].w] != -1) {
 	//visited
-        if (moves[possibleMoves[i].w] == moves[currV]+1) {
+        if ( moves[possibleMoves[i].w] == (moves[currV]+1) ) {
           //equal number of moves
 	  if ( stamina[possibleMoves[i].w] > (currStamina - possibleMoves[i].weight) ) {
             //more stamina leftover: don't push new move to stack
@@ -349,7 +351,7 @@ Edge getNextMove(Agent agent,Graph g) {
 
 //Actually perform the move, by changing the agent's state
 //This function HAS BEEN updated to adjust the agent's stamina
-void makeNextMove(Graph g, Agent agent,Edge move){
+void makeNextMove(Graph g, Agent agent, Edge move){
   agent->currentCycle++;
   agent->currentLocation = move.w;
   if(agent->goal != -1) {

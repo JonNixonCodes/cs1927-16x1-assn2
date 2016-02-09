@@ -159,7 +159,7 @@ int step(int cycle,Agent agents[],Graph g,int maxCycles){
     cycle++;
     for(i=0;i<=NUM_DETECTIVES;i++){
        Edge  nextMove = getNextMove(agents[i],g);  
-       makeNextMove(agents[i],nextMove);
+       makeNextMove(g, agents[i], nextMove);
      
     }
     display(cycle,agents,g);
